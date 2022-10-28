@@ -1,0 +1,16 @@
+{
+  "name": "@gamariverib/studenti-libs-calendar",
+  "version": "0.1.0",
+  "description": "Functions for the creation and validation of active days in the calendar.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "studenti",
+    "calendar",
+    "active days"
+  ],
+  "author": "José Gamaliel Rivera Ibarra <gama.rivera@gmail.com> (https://gamarivera.dev)",
+  "license": "Apache-2.0"
+}
