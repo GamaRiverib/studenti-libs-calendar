@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * Get the number of days in a month
  * @param {number} year Year
@@ -6,7 +8,8 @@
  */
 function getDaysInMonth(year, monthIndex) {
   if (monthIndex < 0 || monthIndex > 11) {
-    throw new Error("Month index out of range");
+    const error = `Month index out of range: ${monthIndex}`;
+    throw new Error(error);
   }
   return new Date(year, monthIndex + 1, 0).getDate();
 }
@@ -17,19 +20,16 @@ function getDaysInMonth(year, monthIndex) {
  * @param {number} monthIndex Month index (base 0)
  * @param {number} date Date
  * @param {boolean} [inactive] Active
- * @returns {string} Date mask
+ * @returns {number} Date mask
  */
 function getDateMask(year, monthIndex, date, inactive) {
   const daysInMonth = getDaysInMonth(year, monthIndex);
-  const maskArray = [];
-  for (let i = 1; i <= daysInMonth; i++) {
-    if (i === date) {
-      maskArray.unshift(inactive ? "0" : "1");
-    } else {
-      maskArray.unshift(inactive ? "1" : "0");
-    }
+  let mask = 1 << date - 1;
+  if (inactive) {
+    const ones = (~(1 << 31)) >>> (31 - daysInMonth);
+    mask = ~mask & ones;
   }
-  return maskArray.join("");
+  return mask;
 }
 
 module.exports = {

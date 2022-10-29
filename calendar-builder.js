@@ -1,7 +1,24 @@
 // @ts-check
 
-const { getDaysInMonth } = require("./utilities");
+const { getDaysInMonth, getDateMask } = require("./utilities");
 const { Calendar } = require("./calendar");
+
+const MonthIndices = {
+  January: 0,
+  February: 1,
+  March: 2,
+  April: 3,
+  May: 4,
+  June: 5,
+  July: 6,
+  August: 7,
+  September: 8,
+  October: 9,
+  November: 10,
+  December: 11
+};
+
+const ONES = ~(1 << 31);
 
 /**
  * Calendar builder class.
@@ -49,18 +66,28 @@ class CalendarBuilder {
   }
 
   /**
-   * Get the active days of the month as a string of ones and zeros
-   * @param {number} daysInMonth Number of days
-   * @param {boolean} active  If true all days active, else all days inactive
-   * @returns
+   * Every day of the month active
+   * @param {number} year Year
+   * @param {number} monthIndex Month index (base 0)
+   * @returns {number}
    */
-  #getMonthActiveDays(daysInMonth, active) {
-    const days = [];
-    const a = active ? "1" : "0";
-    for (let i = 0; i < daysInMonth; i++) {
-      days[i] = a;
+  #getMonthAllActive(year, monthIndex) {
+    const daysInMonth = getDaysInMonth(year, monthIndex);
+    return ONES >>> (31 - daysInMonth);
+  }
+
+  /**
+   * Load an existing calendar
+   * @param {Calendar} calendar Calendar
+   * @returns {CalendarBuilder}
+   */
+  loadCalendar(calendar) {
+    const c = this.#getCalendar(calendar.year);
+    if (c !== undefined) {
+      throw new Error("Calendar already exists for the same year.");
     }
-    return days.join("");
+    this.#calendars.push(calendar);
+    return this;
   }
 
   /**
@@ -94,9 +121,7 @@ class CalendarBuilder {
   initYearAllDaysActive(year) {
     const calendar = this.#getOrCreateCalendar(year);
     for (let i = 0; i < 12; i++) {
-      const daysInMonth = getDaysInMonth(year, i);
-      const monthActiveDaysString = this.#getMonthActiveDays(daysInMonth, true);
-      calendar.activeDays[i] = parseInt(monthActiveDaysString, 2);
+      calendar.activeDays[i] = this.#getMonthAllActive(year, i);
     }
     return this;
   }
@@ -121,6 +146,10 @@ class CalendarBuilder {
    * @returns {CalendarBuilder}
    */
   initMonthAllDaysInactive(year, monthIndex) {
+    if (monthIndex < MonthIndices.January || monthIndex > MonthIndices.December) {
+      const error = `Month index out of range: ${monthIndex}`;
+      throw new Error(error);
+    }
     const calendar = this.#getOrCreateCalendar(year);
     calendar.activeDays[monthIndex] = 0;
     return this;
@@ -133,10 +162,12 @@ class CalendarBuilder {
    * @returns {CalendarBuilder}
    */
   initMonthAllDaysActive(year, monthIndex) {
+    if (monthIndex < MonthIndices.January || monthIndex > MonthIndices.December) {
+      const error = `Month index out of range: ${monthIndex}`;
+      throw new Error(error);
+    }
     const calendar = this.#getOrCreateCalendar(year);
-    const daysInMonth = getDaysInMonth(year, monthIndex);
-    const monthActiveDaysString = this.#getMonthActiveDays(daysInMonth, true);
-    calendar.activeDays[monthIndex] = parseInt(monthActiveDaysString, 2);
+    calendar.activeDays[monthIndex] = this.#getMonthAllActive(year, monthIndex);
     return this;
   }
 
@@ -147,20 +178,23 @@ class CalendarBuilder {
    * @returns {CalendarBuilder}
    */
   initMonthWeekendInactive(year, monthIndex) {
+    if (monthIndex < MonthIndices.January || monthIndex > MonthIndices.December) {
+      const error = `Month index out of range: ${monthIndex}`;
+      throw new Error(error);
+    }
     const calendar = this.#getOrCreateCalendar(year);
     const daysInMonth = getDaysInMonth(year, monthIndex);
-    const monthActiveDaysArray = [];
+    let monthActiveDays = this.#getMonthAllActive(year, monthIndex);
+    let mask = 1;
     for (let i = 1; i <= daysInMonth; i++) {
       const d = new Date(year, monthIndex, i);
       const day = d.getDay();
       if (day === 0 || day === 6) {
-        monthActiveDaysArray.unshift("0");
-      } else {
-        monthActiveDaysArray.unshift("1");
+        monthActiveDays = monthActiveDays ^ mask;
       }
+      mask = mask << 1;
     }
-    const monthActiveDaysString = monthActiveDaysArray.join("");
-    calendar.activeDays[monthIndex] = parseInt(monthActiveDaysString, 2);
+    calendar.activeDays[monthIndex] = monthActiveDays;
     return this;
   }
 
@@ -183,8 +217,22 @@ class CalendarBuilder {
    * @param {number} date Date
    */
   setDayAsActive(year, monthIndex, date) {
+    if (monthIndex < MonthIndices.January || monthIndex > MonthIndices.December) {
+      const error = `Month index out of range: ${monthIndex}`;
+      throw new Error(error);
+    }
+    const daysInMonth = getDaysInMonth(year, monthIndex);
+    if (date < 0 || date > daysInMonth) {
+      const error = `Date out of range: ${date}`;
+      throw new Error(error);
+    }
     const calendar = this.#getOrCreateCalendar(year);
-    calendar.setDayAsActive(monthIndex, date);
+    let monthActiveDays = calendar.activeDays[monthIndex];
+    if (!monthActiveDays) {
+      monthActiveDays = 0;
+    }
+    const mask = getDateMask(calendar.year, monthIndex, date);
+    calendar.activeDays[monthIndex] = monthActiveDays | mask;
     return this;
   }
 
@@ -207,8 +255,22 @@ class CalendarBuilder {
    * @param {number} date Date
    */
   setDayAsInactive(year, monthIndex, date) {
+    if (monthIndex < MonthIndices.January || monthIndex > MonthIndices.December) {
+      const error = `Month index out of range: ${monthIndex}`;
+      throw new Error(error);
+    }
+    const daysInMonth = getDaysInMonth(year, monthIndex);
+    if (date < 0 || date > daysInMonth) {
+      const error = `Date out of range: ${date}`;
+      throw new Error(error);
+    }
     const calendar = this.#getOrCreateCalendar(year);
-    calendar.setDayAsInactive(monthIndex, date);
+    let monthActiveDays = calendar.activeDays[monthIndex];
+    if (!monthActiveDays) {
+      monthActiveDays = 0;
+    }
+    const mask = getDateMask(calendar.year, monthIndex, date, true);
+    calendar.activeDays[monthIndex] = monthActiveDays & mask;
     return this;
   }
 
@@ -268,4 +330,5 @@ class CalendarBuilder {
 
 module.exports = {
   CalendarBuilder,
+  MonthIndices,
 };

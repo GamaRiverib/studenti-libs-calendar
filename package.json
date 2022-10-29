@@ -12,5 +12,13 @@
     "active days"
   ],
   "author": "José Gamaliel Rivera Ibarra <gama.rivera@gmail.com> (https://gamarivera.dev)",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GamaRiverib/studenti-libs-calendar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GamaRiverib/studenti-libs-calendar/issues"
+  },
+  "homepage": "https://github.com/GamaRiverib/studenti-libs-calendar#readme"
 }
