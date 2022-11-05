@@ -7,7 +7,7 @@ class Calendar {
   year = 0;
   /** @type {(number|null)[]} */
   activeDays = [];
-  
+
   /**
    * Calendar constructor
    * @param {number} year Year
@@ -16,7 +16,7 @@ class Calendar {
     const y = typeof year === "string" ? parseInt(year) : year;
     Object.defineProperty(this, "year", {
       value: y,
-      writable: false
+      writable: false,
     });
   }
 
@@ -36,10 +36,31 @@ class Calendar {
     return (mask & month) > 0;
   }
 
+  /**
+   * JSON calendar
+   * @returns {Object.<number, (number | null)[]>}
+   */
   toJSON() {
+    /** @type {Object.<number, (number | null)[]>} */
     const json = {};
     json[this.year] = this.activeDays;
     return json;
+  }
+
+  static fromJSON(json) {
+    const calendars = [];
+    if (json) {
+      for (let yearStr in json) {
+        try {
+          const year = parseInt(yearStr, 10);
+          const activeDays = json[yearStr];
+          calendars.push({ year, activeDays });
+        } catch (reason) {
+          console.warn(reason);
+        }
+      }
+    }
+    return calendars;
   }
 }
 

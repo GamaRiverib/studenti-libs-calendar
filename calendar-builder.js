@@ -91,6 +91,29 @@ class CalendarBuilder {
   }
 
   /**
+   * Load calendar from JSON representation
+   * @param {any} json 
+   * @returns {CalendarBuilder}
+   */
+  fromJSON(json) {
+    if (json) {
+      for (let yearStr in json) {
+        try {
+          const year = parseInt(yearStr, 10);
+          const calendar = new Calendar(year);
+          /** @type {(number|null)[]} */
+          const activeDays = json[yearStr];
+          calendar.activeDays = activeDays;
+          this.#calendars.push(calendar);
+        } catch (reason) {
+          console.warn(reason);
+        }
+      }
+    }
+    return this;
+  }
+
+  /**
    * Add year calendar
    * @param {number} year Year
    * @returns {CalendarBuilder}

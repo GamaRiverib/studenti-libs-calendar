@@ -1,6 +1,6 @@
 {
   "name": "@gamariverib/studenti-libs-calendar",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Functions for the creation and validation of active days in the calendar.",
   "main": "index.js",
   "scripts": {
