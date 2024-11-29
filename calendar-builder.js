@@ -226,7 +226,7 @@ class CalendarBuilder {
    * @param {Date} date Date
    * @returns {CalendarBuilder}
    */
-  seDayAsActiveDayFromDate(date) {
+  setDayAsActiveDayFromDate(date) {
     const year = date.getFullYear();
     const monthIndex = date.getMonth();
     const day = date.getDate();
